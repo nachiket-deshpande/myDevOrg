@@ -7,7 +7,7 @@ public with sharing class ScheduleEditorController {
 
     // id of current User
     private String currentUserId;
-    // starting month of fiscal year
+    // starting month of fiscal yearr
     public Integer fiscalYearStartMonth {get; set;}
     // maps of Opportunity to LineItem to Scheduled Month to List of Schedules
     public Map<String, Map<String, Map<String, List<OpportunityLineItemSchedule>>>> 
