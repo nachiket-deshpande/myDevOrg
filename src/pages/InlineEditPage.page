@@ -1,0 +1,9 @@
+<apex:page controller="InlineEditPageController">
+   <apex:form >
+      <c:MultiRecordComponent aParentRecId="{!MyRecId}" asObjectType="{!MysObj}" aFieldList="{!MyFieldList}"
+         aRelationField="{!MyRelationField}" aLabelOverrideFieldList="{!MyLabelOverrideFieldList}"
+         aLabelOverrideTextList="{!MyLabelOverrideTextList}" aDefaultValueFieldList="{!MyDefaultValueFieldList}" 
+         aDefaultValueTextList="{!MyDefaultValueTextList}" aBlockTitle="{!MyBlockTitle}" aAllowAdd="{!MyAllowAdd}"
+         aAllowEdit="{!MyAllowEdit}" aAllowDelete="{!MyAllowDelete}" />
+   </apex:form>
+</apex:page>

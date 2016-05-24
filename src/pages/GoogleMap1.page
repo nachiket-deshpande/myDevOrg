@@ -1,0 +1,57 @@
+<apex:page standardController="Contact"> 
+<html>
+ <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"></meta>
+    <meta charset="utf-8"></meta>
+    <title>Simple markers</title>
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
+    <script>
+    
+//JS function to initialize Google Map     
+function initialize() {
+  var geocoder= new google.maps.Geocoder();
+
+  var address = "{!Contact.MailingStreet}, " + "{!Contact.MailingCity}, " + "{!Contact.MailingPostalCode}, " + "{!Contact.MailingCountry}";
+  
+  geocoder.geocode( { 'address': address}, function(results, status){
+  if (status == google.maps.GeocoderStatus.OK) {
+      
+      var myLatlng = results[0].geometry.location;
+      //alert(results[0].geometry.location)
+      var mapOptions = {
+        zoom: 8,
+        center: myLatlng
+      }
+      var map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+      var marker = new google.maps.Marker({
+          position: myLatlng,
+          map: map,
+          title: '{!Contact.MailingStreet}'
+      });
+    }
+    else {
+      alert("The google maps geocoding operation failed due to: " + status);
+  
+  } 
+  
+});
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+  </head>
+  
+  <body>
+    <div id="map-canvas" style="width: 1000px; height: 1000px"></div>
+  </body>
+</html>
+</apex:page>

@@ -1,0 +1,99 @@
+<apex:component controller="MultiRecordComponentController" allowDML="true">
+   <style>
+.cmdLink {
+   font-size: 89%;
+   text-decoration: none;
+   float: left;
+}
+
+.cmdLink:hover {
+   text-decoration: underline;
+}
+</style>
+   <apex:attribute name="aParentRecId" description="Parent Record Id" type="String" required="true" assignTo="{!ParentRecId}" />
+   <apex:attribute name="aRelationField" description="Field that will be assigned the Parent's Record Id" type="String" required="true"
+      assignTo="{!RelationField}" />
+   <apex:attribute name="asObjectType" description="Type of child Object." type="String" required="true" assignTo="{!sObjectType}" />
+   <apex:attribute name="aFieldList" description="List of fields to display." type="string[]" required="true" assignTo="{!FieldList}" />
+   <apex:attribute name="aAllowAdd" description="Ability to add new records." type="Boolean" required="false" assignTo="{!AllowAdd}" />
+   <apex:attribute name="aAllowEdit" description="Ability to edit records" type="Boolean" required="false" assignTo="{!AllowEdit}" />
+   <apex:attribute name="aAllowDelete" description="Ability to delete records" type="Boolean" required="false" assignTo="{!AllowDelete}" />
+   <apex:attribute name="aLabelOverrideFieldList" description="List of fields with overridden labels" type="String[]" required="false"
+      assignTo="{!LabelOverrideFieldList}" />
+   <apex:attribute name="aLabelOverrideTextList" description="List of text that overrides the field labels" type="String[]" required="false"
+      assignTo="{!LabelOverrideTextList}" />
+   <apex:attribute name="aDefaultValueFieldList" description="List of fields used to set default values on added records" type="String[]"
+      required="false" assignTo="{!DefaultValueFieldList}" />
+   <apex:attribute name="aDefaultValueTextList" description="List of text used to set default values on added records" type="String[]"
+      required="false" assignTo="{!DefaultValueTextList}" />
+   <apex:attribute name="aBlockTitle" description="Page block title text" type="String" required="false" />
+
+
+   <apex:actionFunction name="DoDeleteJS" action="{!DoDelete}" rerender="pbContainer,msgs" immediate="true">
+      <apex:param name="ActionId" assignto="{!ActionId}" value="" />
+   </apex:actionFunction>
+   <apex:actionFunction name="DoRemoveJS" action="{!DoRemove}" rerender="pbContainer,msgs" immediate="true">
+      <apex:param name="ActionRowNumber" assignto="{!ActionRowNumber}" value="" />
+   </apex:actionFunction>
+
+   <apex:pageMessages id="msgs" />
+
+   <apex:pageBlock id="pbContainer" title="{!aBlockTitle}">
+
+
+      <apex:pageBlockButtons location="top">
+
+         <apex:actionStatus id="ButtonStatus">
+            <apex:facet name="stop">
+               <apex:outputPanel >
+                  <apex:commandButton rerender="pbContainer,msgs" status="ButtonStatus" value="Add" action="{!DoAdd}" immediate="true"
+                     rendered="{!AllowAdd}" />
+                  <apex:commandButton rerender="pbContainer,msgs" status="ButtonStatus" value="Save" action="{!DoSave}"
+                     rendered="{!OR(AllowEdit,AllowAdd)}" disabled="{!DisableSave}" />
+                  <apex:commandButton rerender="pbContainer,msgs" status="ButtonStatus" value="Cancel" action="{!DoCancel}" immediate="true"
+                     rendered="{!OR(AllowEdit,AllowAdd)}" disabled="{!DisableCancel}" />
+               </apex:outputPanel>
+            </apex:facet>
+            <apex:facet name="start">
+               <apex:outputPanel >
+                  <apex:commandButton value="Processing..." disabled="true" rendered="{!AllowAdd}" />
+                  <apex:commandButton value="Processing..." disabled="true" rendered="{!OR(AllowEdit,AllowAdd)}" />
+                  <apex:commandButton value="Processing..." disabled="true" rendered="{!OR(AllowEdit,AllowAdd)}" />
+               </apex:outputPanel>
+            </apex:facet>
+         </apex:actionStatus>
+
+      </apex:pageBlockButtons>
+
+      <apex:pageBlockTable id="pbTable" value="{!ObjectList}" var="ow">
+         <apex:column headerValue="Action" width="71px" rendered="{!OR(AllowEdit,AllowDelete,AllowAdd)}">
+            <apex:outputPanel rendered="{!ISBLANK(ow.obj.Id)}">
+               <apex:outputLink style="color: #015BA7;" styleClass="cmdLink" value="javascript:DoRemoveJS('{!JSENCODE(ow.AddedRowNumber)}');">Remove</apex:outputLink>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!!ISBLANK(ow.obj.Id)}">
+               <apex:commandLink style="color: #015BA7;" styleClass="cmdLink" value="Edit" action="{!DoEdit}" immediate="true"
+                  rendered="{!AllowEdit}" rerender="pbContainer,msgs">
+                  <apex:param name="RecId" value="{!ow.obj.Id}" assignTo="{!ActionId}" />
+               </apex:commandLink>
+               <apex:outputPanel style="display:inline;float: left; margin: 0 2px 0 2px" rendered="{!AND(AllowEdit,AllowDelete)}"> | </apex:outputPanel>
+               <apex:outputLink style="color: #015BA7;" styleClass="cmdLink"
+                  value="javascript:if (window.confirm('Are you sure?')) DoDeleteJS('{!JSENCODE(ow.obj.Id)}');" rendered="{!AllowDelete}">Del</apex:outputLink>
+            </apex:outputPanel>
+         </apex:column>
+
+         <apex:repeat value="{!ColumnList}" var="cf">
+            <apex:column width="200">
+               <apex:facet name="header">
+                  <span>{!cf.FieldLabel}</span>
+               </apex:facet>
+               <apex:outputPanel rendered="{!OR(!ISBLANK(ow.obj['Id']), AND(ISBLANK(ow.obj['Id']),cf.IsObjField))}">
+                  <apex:outputField value="{!ow.obj[cf.FieldName]}" rendered="{!!AND(ow.IsEditMode,cf.IsEditable)}" />
+
+                  <apex:InputField value="{!ow.obj[cf.FieldName]}" rendered="{!AND(ow.IsEditMode,cf.IsEditable)}" />
+               </apex:outputPanel>
+            </apex:column>
+         </apex:repeat>
+      </apex:pageBlockTable>
+
+   </apex:pageBlock>
+</apex:component>

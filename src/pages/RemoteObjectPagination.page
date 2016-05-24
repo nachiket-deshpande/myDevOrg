@@ -1,0 +1,158 @@
+<apex:page docType="html-5.0">
+    <style>
+    #AccountTable, #AccountTable th, #AccountTable td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    #AccountTable thead {
+        font-weight: bold;
+    }
+    #AccountTable {
+        width: 100%;
+    }
+    #pageButtons {
+        text-align: center;
+        padding: 10px 0px;
+    }
+    button[disabled=disabled], button:disabled {
+        border-color: #c4c4c4;
+        color: #909090;
+    }
+    </style>
+    
+    <!-- Remote Objects definition to set accessible sObjects and fields -->
+    <apex:remoteObjects >
+        <apex:remoteObjectModel name="Account" jsShorthand="sAccount" 
+            fields="Name,Id,Phone,BillingCity,BillingState">
+            <apex:remoteObjectField name="Active__c" jsShorthand="Active"/>
+        </apex:remoteObjectModel>
+    </apex:remoteObjects>
+
+    <!-- JavaScript to make Remote Objects calls -->
+    <script>
+        // define and initialize page scope variables
+        var RecordOffset = 0;
+        var PageSize = 100;
+        
+        // attach init() to the load event; cross-browser compatible  
+        if (window.attachEvent) {window.attachEvent('onload', init);}
+        else if (window.addEventListener) {window.addEventListener('load', init, false);}
+        else {document.addEventListener('load', init, false);}
+
+        // run initial load of accounts
+        function init() {
+            fetchAccounts('start');
+        }
+
+        // fetch and load accounts into the page
+        var fetchAccounts = function(Direction) {
+            // adjust offset based on how the function is called
+            switch(Direction) {
+                case 'next':
+                    RecordOffset += PageSize;
+                    break;
+                case 'back':
+                    RecordOffset -= PageSize;
+                    break;
+                case 'start':
+                    disableBack(true);
+                    break;
+            }
+
+            // create a new Remote Object
+            var ac = new SObjectModel.sAccount();
+            
+            // create JSON object with query parameters
+            var QueryParam = { orderby: [ {Name: 'ASC'} ], limit: PageSize };
+            
+            // add offset property separately and only when the record offset is greater than 0 
+            // because the first record would be skipped at offset 1 and offset 0 is invalid
+            if (RecordOffset > 0) {
+                QueryParam.offset = RecordOffset;
+            } else {
+                RecordOffset = 0;
+            }
+            
+            // Use the Remote Object retrieve command to query accounts
+            ac.retrieve(
+                QueryParam,
+            function(err, records, event) {
+                loadRows(err, records, event);
+            });
+        };
+        
+        // reload html table with rows of account information
+        function loadRows(err, records, event) {
+            if(err) {
+                alert(err.message);
+            } else {
+                var tableBody = document.getElementById("AccountTableBody");
+                tableBody.innerHTML = "";
+
+                records.forEach(function(record) {
+                    // Add the line item to the warehouses list
+                    // there is probably a more efficient way to do this
+                    var row = tableBody.insertRow();
+                    var cell0 = row.insertCell(0);
+                    var cell1 = row.insertCell(1);
+                    var cell2 = row.insertCell(2);
+                    var cell3 = row.insertCell(3);
+                    var cell4 = row.insertCell(4);
+                    cell0.innerHTML = record.get("Name");
+                    cell1.innerHTML = record.get("Phone");
+                    cell2.innerHTML = record.get("BillingCity");
+                    cell3.innerHTML = record.get("BillingState");
+                    cell4.innerHTML = record.get("Active");
+                });
+                
+                // disable next when records retrieved are less than the page size
+                // we know there are no more accounts to query
+                if (records.length != PageSize) {
+                    disableNext(true);
+                } else { 
+                    disableNext(false);
+                }
+                // enable back when we are past the first page
+                if (RecordOffset >= PageSize) {
+                    disableBack(false);
+                } else {
+                    disableBack(true);
+                }
+            }
+        }
+        
+        // toggle Back button
+        function disableBack(IsDisabled) {
+            var btnBack = document.getElementById("btnBack");
+            btnBack.disabled = IsDisabled;
+        }
+        
+        // toggle Next button
+        function disableNext(IsDisabled) {
+            var btnNext = document.getElementById("btnNext");
+            btnNext.disabled = IsDisabled;
+        }
+        
+    </script>
+
+    <h1>Retrieve Accounts via Remote Objects</h1>
+
+    <div id="pageButtons">
+      <button id="btnBack" onclick="fetchAccounts('back')">Back</button>
+      <button id="btnNext" onclick="fetchAccounts('next')">Next</button>
+    </div>
+
+    <table id="AccountTable">
+      <thead>
+         <tr>
+            <td>{!$ObjectType.Account.Fields.Name.Label}</td>
+            <td>{!$ObjectType.Account.Fields.Phone.Label}</td>
+            <td>{!$ObjectType.Account.Fields.BillingCity.Label}</td>
+            <td>{!$ObjectType.Account.Fields.BillingState.Label}</td>
+            <td>{!$ObjectType.Account.Fields.Active__c.Label}</td>
+         </tr>
+      </thead>
+      <tbody id="AccountTableBody">
+      </tbody>
+    </table>
+</apex:page>

@@ -1,0 +1,137 @@
+<apex:page controller="ScheduleEditorController" sidebar="false" docType="html-5.0">
+    <head>
+    </head>
+    <style>
+    
+    </style>
+    <apex:form id="form">
+
+    <apex:pageMessages />
+
+    <!-- Status Bar -->
+    <apex:outputpanel >
+        <apex:actionStatus id="statusBar" layout="block">
+            <apex:facet name="start">
+                <div id="assign-action-spinner-main">
+                    <div id="assign-action-spinner-content">
+                        <img src="/img/analytics/reportbuilder/icons/spinner32.gif"
+                            alt="Processing..." title="Processing..." />
+                        <p>Saving...</p>
+                    </div>
+                </div>
+            </apex:facet>
+        </apex:actionStatus>
+    </apex:outputpanel>
+    <!-- End Of Status -->
+
+    <div style="width:100%">
+    <div id="SaveAll" style="text-align: left">
+        <apex:commandButton value="Save All Schedules" action="{!saveSchedules}" styleClass="button tiny secondary" style="float:left" reRender="form" status="statusBar">
+            <apex:param name="opportunityId" value="" assignTo="{!opportunityId}"/>
+            <apex:param name="lineItemId" value="" assignTo="{!lineItemId}"/>
+        </apex:commandButton>
+    </div>
+
+    <div id="pagination" style="text-align: right">
+        <apex:commandButton value="<< Previous" action="{!previousPage}" styleClass="button tiny secondary" disabled="{!currentPage==1}" reRender="form" status="statusBar"/>
+        <apex:outputLabel value="Showing {!((currentPage-1)*pageSize)+1} - {!IF(totalRecords < (((currentPage-1)*pageSize)+pageSize),
+                                    totalRecords, ((currentPage-1)*pageSize)+pageSize)} Of {!totalRecords} Records" />
+        <apex:commandButton value="Next >>" action="{!nextPage}" styleClass="button tiny secondary" disabled="{!currentPage==totalPages}" reRender="form" status="statusBar"/>
+    </div>
+
+    <div style="text-align: center">
+        <apex:outputLabel value="Showing {!IF(showQuantityOrRevenue==true,'Revenue','Quantity')} Schedules " style="font-size: 0.875rem; font-weight:bold"/>
+        <apex:commandButton value="Show {!IF(showQuantityOrRevenue==true,'Quantity','Revenue')} Schedules"
+                            styleClass="button tiny secondary" action="{!updateRecordCountAndMap}" reRender="form" status="statusBar">
+            <apex:param value="{!!showQuantityOrRevenue}" assignTo="{!showQuantityOrRevenue}" name="showQuantityOrRevenue"/>
+        </apex:commandButton>
+    </div>
+    </div>
+    <br/>
+    <div style="width:100%">
+        <apex:outputPanel rendered="true">
+            <table class="responsive" style="left:0px">
+                <thead>
+                    <tr class="MonthRow">
+                        <th style="text-align: center;">
+                            <b>
+                                FY
+                                <apex:outputText value=" {!(fiscalYear-1)} - " rendered="{!fiscalYearStartMonth != 1}"/>
+                                {!fiscalYear}
+                                <apex:outputPanel id="FY" style="float:right" rendered="false">
+                                    <apex:commandButton value="Last" action="{!fillMap}" reRender="form" status="statusBar">
+                                        <apex:param name="Previous" value="{!(fiscalYear-1)}" assignTo="{!fiscalYear}"/>
+                                    </apex:commandButton>
+                                    <apex:commandButton value="Next" action="{!fillMap}" reRender="form" status="statusBar">
+                                        <apex:param name="Next" value="{!(fiscalYear+1)}" assignTo="{!fiscalYear}"/>
+                                    </apex:commandButton>
+                                </apex:outputPanel>
+                            </b>
+                        </th>
+                        <apex:repeat value="{!lstMonth}" var="month">
+                            <th style="text-align: center; width:{!100/lstMonth.size}% !important">{!month}</th>
+                        </apex:repeat>
+                    </tr>
+                </thead>
+                <tbody>
+                    <apex:repeat value="{!mapOpportunityToMapLineItemToMapMonthToSchedules}" var="opportunityId">
+                        <tr class="LineItemClass" style="vertical-align: baseline !important;">
+                        <td colspan="{!lstMonth.size + 1}" style="width:15% !important">
+                            <b><apex:outputField value="{!mapOpportunity[opportunityId].Name}"/></b>
+                            <apex:commandButton value="Save Forecast Schedules" action="{!saveSchedules}" styleClass="button tiny secondary"
+                                                style="float:right" reRender="form" status="statusBar">
+                                <apex:param name="opportunityId" value="{!opportunityId}" assignTo="{!opportunityId}"/>
+                                <apex:param name="lineItemId" value="" assignTo="{!lineItemId}"/>
+                            </apex:commandButton>
+                        </td>
+                        </tr>
+                        <apex:repeat value="{!mapOpportunityToLstLineItem[opportunityId]}" var="lineItemId">
+                            <tr class="OppClass">
+                                    <td colspan="1" class="Product">
+                                    <b>
+                                        <apex:outputText value="{!mapOpportunityLineItemName[lineItemId]}" style="display:block;"/>
+                                    </b>
+                                    <apex:commandButton value="Save Schedules" action="{!saveSchedules}" style="float:right; display:block;"
+                                                        styleClass="button tiny secondary" reRender="form" status="statusBar">
+                                        <apex:param name="opportunityId" value="{!opportunityId}" assignTo="{!opportunityId}"/>
+                                        <apex:param name="lineItemId" value="{!lineItemId}" assignTo="{!lineItemId}"/>
+                                    </apex:commandButton>
+                                </td>
+                                <apex:repeat value="{!lstMonth}" var="month">
+                                    <td style="background-color: #F1EAD7;">
+                                    <apex:repeat value="{!mapOpportunityToMapLineItemToMapMonthToSchedules[opportunityId][lineItemId]}" var="keyMonth">
+                                        <apex:outputPanel rendered="{!IF(keyMonth==month,TRUE,FALSE)}">
+                                        
+                                            <apex:repeat value="{!mapOpportunityToMapLineItemToMapMonthToSchedules[opportunityId][lineItemId][keyMonth]}" var="lineItemSchedule">
+                                            <apex:outputPanel rendered="{!showQuantityOrRevenue}">
+                                                <!--apex:outputText value="{0, date, MMM dd}" style="width:100% !important;">
+                                                    <apex:param value="{!lineItemSchedule.ScheduleDate}" />
+                                                </apex:outputText-->
+                                                <apex:inputField value="{!lineItemSchedule.Revenue}" style="width:100% !important; text-align:right;"/>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!!showQuantityOrRevenue}">
+                                                <!-- apex:outputText value="{0, date, MMM dd}" style="width:100% !important;">
+                                                    <apex:param value="{!lineItemSchedule.ScheduleDate}" />
+                                                </apex:outputText-->
+                                                <apex:inputField value="{!lineItemSchedule.Quantity}" style="width:100% !important; text-align:right;"/>
+                                            </apex:outputPanel>
+                                            </apex:repeat>
+                                        
+                                        </apex:outputPanel>
+                                    </apex:repeat>
+                                    </td>
+                                </apex:repeat>
+                            </tr>
+                        </apex:repeat>
+                    </apex:repeat>
+                </tbody>
+            </table>
+        </apex:outputPanel>
+    </div>
+    </apex:form>
+
+    <!-- apex:includeScript value="{!$Resource.jquery1113}"/ -->
+<!--     <apex:stylesheet value="{!$Resource.FoundationCSS}"/> -->
+    <script>
+    </script>
+</apex:page>

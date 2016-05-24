@@ -1,0 +1,174 @@
+<apex:page controller="DisplayOpportunityController1"  sidebar="false" showHeader="true">
+  <apex:includeScript value="{!URLFOR($Resource.sorter, '/jquery-latest.js')}"/>
+  <apex:includeScript value="{!URLFOR($Resource.sorter, '/jquery.tablesorter.min.js')}"/>
+ <script>
+      $(document).ready(function() { 
+                $(".accTable").tablesorter(); 
+      }); 
+  </script>
+ <script type="text/javascript">
+        function selectAllCheckboxes(obj,receivedInputID){
+            var inputCheckBox = document.getElementsByTagName("input");
+            for(var i=0; i<inputCheckBox.length; i++){
+                if(inputCheckBox[i].id.indexOf(receivedInputID)!=-1){
+                    inputCheckBox[i].checked = obj.checked;
+                }
+            }
+        }
+        function checkSearchString() {
+            var str = $('#searchid').val();
+            //alert(str);
+            if(/^[a-zA-Z0-9- ]*$/.test(str) == false) {
+                alert('Your search string contains illegal characters.');
+            }
+        }
+    </script>
+
+    <apex:form >
+
+    <div align = "center">
+    <apex:inputText value="{!searchString}" /> &nbsp;&nbsp;
+    <apex:commandButton value="Search" id="searchid" onClick="checkSearchString();" action="{!searchOpportunity}" reRender="oppBlock,message,theaddrs,myButtons,panel1,panel2"/> &nbsp;&nbsp;
+    <apex:commandButton value="Create FollowUp Task" action="{!createFollowupTask}" reRender="panel1,panel2"/>
+    <apex:commandButton value="show popup" action="{!showPopup}" rerender="popup" status="status"/>
+    
+    </div>
+
+    <apex:outputPanel id="panel1">
+    <apex:pageBlock rendered="{!showPanel1}">
+        <div align = "center">
+
+            <apex:outputPanel id="myButtons">
+
+                <apex:commandButton action="{!Beginning}" title="Beginning" value="First" disabled="{!disablePrevious}" reRender="oppBlock,myButtons"/> &nbsp;&nbsp;
+                <apex:commandButton action="{!Previous}" title="Previous" value="Previous" disabled="{!disablePrevious}" reRender="oppBlock,myButtons"/>&nbsp;&nbsp;
+                <apex:commandButton action="{!Next}" title="Next" value="Next" disabled="{!disableNext}" reRender="oppBlock,myButtons"/>&nbsp;&nbsp;
+                <apex:commandButton action="{!End}" title="End" value="Last" disabled="{!disableNext}" reRender="oppBlock,myButtons"/>&nbsp;&nbsp;
+
+            </apex:outputPanel>
+        </div>
+   </apex:pageBlock>
+    <apex:outputPanel id="oppBlock">
+    <apex:pageBlock title="Opportunities" rendered="{!showPanel1}">
+    <apex:pageMessages />
+        <apex:pageBlockTable id="theaddrs" value="{!opportunityWrapperList}" var="opp" styleclass="accTable">
+            <apex:column >
+                <apex:facet name="header">
+                    <apex:inputCheckbox onclick="selectAllCheckboxes(this,'inputId')"/>
+                </apex:facet>
+                <apex:inputCheckbox value="{!opp.checked}" id="inputId"/>
+            </apex:column>
+            <apex:column headerValue="Name">
+                <apex:outputField value="{!opp.oppInstance.Name}"/>
+            </apex:column>
+            <apex:column headerValue="StageName">
+                <apex:outputField value="{!opp.oppInstance.StageName}"/>
+            </apex:column>
+            <apex:column headerValue="CloseDate">
+            <apex:outputField value="{!opp.oppInstance.CloseDate}"/>
+            </apex:column>
+             <apex:facet name="footer">
+                <apex:outputText value="Showing Page # {!pageNumber} of {!totalPages}" style="float:right"/>
+             </apex:facet>
+             <apex:selectList value="{!pageSize}" size="1" onChange="reRenderBlock">
+                <apex:selectOptions value="{!Number}"/>
+             </apex:selectList>
+             <apex:inlineEditSupport event="ondblClick"/>
+        </apex:pageBlockTable>
+    </apex:pageBlock>
+    <apex:actionfunction name="reRenderBlock" reRender="oppBlock"/>
+    </apex:outputPanel>
+    </apex:outputPanel>
+
+    <apex:outputPanel id="panel2">
+        <apex:pageBlock title="Opportunities and Tasks"  rendered="{!showPanel2}">
+        <apex:pageBlockTable id="taskBlockid" value="{!opportunityTaskList}" var="task">
+            <apex:column headerValue="Opportunity Name">
+                <apex:commandLink value="{!task.Name}" action="{!showinfo}">
+                <apex:param name="Id"
+                            value="{!task.Id}"
+                            assignto="{!Id1}"/>
+                 </apex:commandLink>
+            </apex:column>
+            <apex:column headerValue="Tasks">
+            <apex:pageBlocktable title="Tasks" value="{!task.Tasks}" var="a">
+            <apex:column headerValue="Subject">
+                <apex:commandLink value="{!a.Subject}" action="{!showinfo}">
+                    <apex:param name="Id"
+                                value="{!a.Id}"
+                                assignTo="{!Id1}"/>
+                 </apex:commandLink>
+            </apex:column>
+            <apex:column value="{!a.Priority}"/>
+            </apex:pageBlocktable>
+            </apex:column>
+        </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:outputPanel>
+
+<!--     <apex:outputPanel id="popup"> -->
+<!--       <apex:outputPanel id="popInnerOutputPnl" styleClass="customPopup" layout="block" rendered="{!displayPopUp}"> -->
+<!--            <apex:commandButton value="X" title="Close the popup" action="{!closePopup}" styleClass="closeButton" > -->
+<!--            </apex:commandButton> -->
+<!--            <apex:pageBlock> -->
+<!--            <apex:selectList value="{!user1}" size="1" required="true"> -->
+<!--               <apex:selectoptions value = "{!users}"/> -->
+<!--            </apex:selectList> -->
+<!--            <apex:commandButton value = "Assign User" action = "{!assignUserToTask}"/> -->
+<!--            </apex:pageBlock> -->
+<!--            <apex:commandButton value="Ok" styleClass="closeButton" rerender="popup"> -->
+<!--            </apex:commandButton> -->
+<!--       </apex:outputPanel> -->
+<!--    </apex:outputPanel> -->
+        <apex:outputPanel id="popup">
+            <apex:outputPanel styleClass="popupBg" layout="block" rendered="{!displayPopUp}"/>
+                <apex:outputPanel styleClass="popup" layout="block" rendered="{!displayPopUp}">
+                    Popup window
+                <apex:commandButton value="X" style="float:right" action="{!closePopup}" rerender="popup"/>
+<!--                <apex:PageBlock> -->
+<!--                   <apex:outputLabel > Users : </apex:outputLabel> -->
+<!--                        <apex:selectList size="1" value="{!selectedUser}"> -->
+<!--                        <apex:selectOptions value="{!Users}"/> -->
+<!--                   </apex:selectList> -->
+<!--                </apex:pageBlock> -->
+                 <apex:outputLabel >Interested Product</apex:outputLabel>
+                 <apex:actionRegion >
+                     <apex:selectList value="{!selectedUser}" size="1" id="IntrestedProductInput">
+<!--                          <apex:actionSupport event="onchange" action="{!PricePerUnit}" reRender="f1"/> -->
+                            <apex:selectOptions value="{!Users}"/>
+                     </apex:selectList>
+                 </apex:actionRegion>
+            </apex:outputPanel>
+        </apex:outputPanel>
+    </apex:form>
+     <style type="text/css">
+
+        .popup
+        {
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 50%;
+            padding:10px;
+            position: absolute;
+            width: 500px;
+            margin-left: -250px;
+            top:80px;
+        }
+
+        .popupBg
+        {
+            background-color:black;
+            opacity: 0.20;
+            filter: alpha(opacity = 70);
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 9998;
+        }
+
+    </style>
+</apex:page>

@@ -1,0 +1,107 @@
+<apex:component controller="GeoCoverageController">
+    <!-- INCLUDE GOOGLE MAP & JQUERY SCRIPTS  -->
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <!-- END SCRIPTS  -->
+
+    <!-- BEGIN JQUERY TO PIN DROP MAP BASED ON THE ADDRESS ARRAY -->
+    <script type="text/javascript">
+    //On Document Ready 
+    $(document).ready(function() {
+        var delay = 50;
+        var infowindow = new google.maps.InfoWindow();
+        var myOptions = {
+            center: new google.maps.LatLng(38.68551, -96.503906),
+            zoom: 4,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            scrollwheel:  false,
+            disableDoubleClickZoom: true
+        };
+        var map = new google.maps.Map(document.getElementById("map"), myOptions);
+        var addressArray = {!listOfAddresses};  // Use this format to fill addressArray 
+        var geocoder = new google.maps.Geocoder();
+        var markerBounds = new google.maps.LatLngBounds();
+    
+        //Geocoding
+        function getAddress(search, next) {
+            geocoder.geocode( {address:search}, function (results,status) {
+                //If it was successful
+                if (status == google.maps.GeocoderStatus.OK) {
+                    //get the latitude and longitude
+                    //alert('Address='+search);
+                    var p = results[0].geometry.location;
+                    var lat=p.lat();
+                    var lng=p.lng();
+                    //alert('lat='+lat);
+                    //alert('lng='+lng);
+                    // Create a marker
+                    createMarker(lat,lng);
+                    
+                } else {
+                    if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+                        nextAddress--;
+                        //alert('Query Limit'+nextAddress);
+                        //delay++;
+                    }
+                }
+                //get the next address
+                next();
+            });
+        }
+    
+        //Create a Marker
+        function createMarker(lat,lng) {
+            var marker = new google.maps.Marker({
+                map: map,
+                position: new google.maps.LatLng(lat,lng)
+            });
+            markerBounds.extend(marker.position);
+            //hide zoom in and zoom out button
+            $(".gmnoprint").hide();
+        }
+    
+        //Global variable to remind us what to do next
+        var nextAddress = 0;
+    
+        //Call the next Geocode operation when the reply comes back
+        function theNext() {
+            //check if address index is less than the addressArray length 
+            if (nextAddress < addressArray.length) {
+                //alert(addressArray[nextAddress]);
+                setTimeout(function() {
+                    getAddress(addressArray[nextAddress],theNext); }, delay);
+               nextAddress++;
+            } else {
+                
+                // We're done. Show map bounds
+                map.fitBounds(bounds);
+            }
+        }
+    
+        //Call that function for the first time
+        theNext();
+    });
+    </script>
+    <!-- END JQUERY TO PIN DROP MAP BASED ON THE ADDRESS ARRAY -->
+
+    <!-- SET MAP DISPLAY CSS PROPERTY -->
+    <style>
+        #map {
+          font-family: Arial;
+          font-size:12px;
+          line-height:normal !important;
+          height:500px;
+          width: 100%;
+          background:transparent;
+        }
+    </style>
+    <!-- END MAP DISPLAY CSS PROPERTY -->
+
+    <!-- BEGIN COMPONENT CONTENT -->
+
+    <!-- BEGIN MAP DISPLAY -->
+    <div id="map" ></div>
+    <!-- END MAP DISPLAY -->
+
+    <!-- END COMPONENT CONTENT -->
+</apex:component>
